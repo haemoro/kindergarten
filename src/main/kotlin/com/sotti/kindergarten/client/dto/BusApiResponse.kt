@@ -1,6 +1,7 @@
 package com.sotti.kindergarten.client.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class BusApiResponse(
@@ -11,16 +12,13 @@ data class BusApiResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Bus(
+    @JsonProperty("kindercode")
     val kinderCode: String?,
-    val officeedu: String?,
-    val subofficeedu: String?,
-    val kindername: String?,
-    val establish: String?,
     val vhcl_oprn_yn: String?,
-    val opra_vhcnt: Int?,
-    val dclr_vhcnt: Int?,
-    val psg9_dclr_vhcnt: Int?,
-    val psg12_dclr_vhcnt: Int?,
-    val psg15_dclr_vhcnt: Int?,
-    val pbntTmng: String?,
+    val opra_vhcnt: String?,
+    val dclr_vhcnt: String?,
+    val psg9_dclr_vhcnt: String?,
+    val psg12_dclr_vhcnt: String?,
+    val psg15_dclr_vhcnt: String?,
+    val pbnttmng: String?,
 )

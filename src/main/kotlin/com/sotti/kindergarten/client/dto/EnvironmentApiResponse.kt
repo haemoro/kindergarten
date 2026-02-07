@@ -12,12 +12,8 @@ data class EnvironmentApiResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Environment(
+    @JsonProperty("kindercode")
     val kinderCode: String?,
-    val officeedu: String?,
-    val subofficeedu: String?,
-    val kindername: String?,
-    @JsonProperty("estb_pt")
-    val estbPt: String?,
     val arql_chk_dt: String?,
     val arql_chk_rslt_tp_cd: String?,
     val fxtm_dsnf_trgt_yn: String?,
@@ -34,5 +30,5 @@ data class Environment(
     val mdst_chk_rslt_cd: String?,
     val ilmn_chk_dt: String?,
     val ilmn_chk_rslt_cd: String?,
-    val pbntTmng: String?,
+    val pbnttmng: String?,
 )

@@ -38,7 +38,7 @@ class KindergartenApiClientTest :
                                     {
                                         "kinderInfo": [
                                             {
-                                                "kinderCode": "11680001",
+                                                "kindercode": "11680001",
                                                 "kindername": "테스트유치원",
                                                 "establish": "사립",
                                                 "addr": "서울특별시 강남구",
@@ -92,7 +92,7 @@ class KindergartenApiClientTest :
                                         {
                                             "kinderInfo": [
                                                 {
-                                                    "kinderCode": "11680001",
+                                                    "kindercode": "11680001",
                                                     "kindername": "테스트유치원"
                                                 }
                                             ],
@@ -136,7 +136,7 @@ class KindergartenApiClientTest :
                                     """
                                     {
                                         "kinderInfo": [
-                                            {"kinderCode": "11680001", "kindername": "유치원1"}
+                                            {"kindercode": "11680001", "kindername": "유치원1"}
                                         ],
                                         "totalCount": 150
                                     }
@@ -145,7 +145,7 @@ class KindergartenApiClientTest :
                                     """
                                     {
                                         "kinderInfo": [
-                                            {"kinderCode": "11680002", "kindername": "유치원2"}
+                                            {"kindercode": "11680002", "kindername": "유치원2"}
                                         ],
                                         "totalCount": 150
                                     }
@@ -191,10 +191,10 @@ class KindergartenApiClientTest :
                                     {
                                         "kinderInfo": [
                                             {
-                                                "kinderCode": "11680001",
+                                                "kindercode": "11680001",
                                                 "archyy": "2010",
-                                                "floorcnt": 3,
-                                                "bldgprusarea": "1500.5"
+                                                "floorcnt": "지상3층",
+                                                "bldgprusarea": "1500.5㎡"
                                             }
                                         ],
                                         "totalCount": 1
@@ -237,7 +237,7 @@ class KindergartenApiClientTest :
                                     """
                                     {
                                         "kinderInfo": [
-                                            {"kinderCode": "1168000$pageCounter"}
+                                            {"kindercode": "1168000$pageCounter"}
                                         ],
                                         "totalCount": 50
                                     }

@@ -12,17 +12,13 @@ data class InsuranceApiResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Insurance(
+    @JsonProperty("kindercode")
     val kinderCode: String?,
-    val officeedu: String?,
-    val subofficeedu: String?,
-    val kindername: String?,
-    @JsonProperty("estb_pt")
-    val estbPt: String?,
     val insurance_nm: String?,
     val insurance_en: String?,
     val insurance_yn: String?,
     val company1: String?,
     val company2: String?,
     val company3: String?,
-    val pbntTmng: String?,
+    val pbnttmng: String?,
 )

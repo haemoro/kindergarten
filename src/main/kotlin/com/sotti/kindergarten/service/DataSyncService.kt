@@ -29,6 +29,7 @@ import com.sotti.kindergarten.repository.CenterSafetyCheckRepository
 import com.sotti.kindergarten.repository.CenterSafetyEducationRepository
 import com.sotti.kindergarten.repository.CenterTeacherRepository
 import com.sotti.kindergarten.repository.CenterYearOfWorkRepository
+import com.sotti.kindergarten.repository.RegionRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.locationtech.jts.geom.Coordinate
@@ -43,6 +44,7 @@ import java.time.LocalDateTime
 @Service
 class DataSyncService(
     private val apiClient: KindergartenApiClient,
+    private val regionRepository: RegionRepository,
     private val centerRepository: CenterRepository,
     private val buildingRepository: CenterBuildingRepository,
     private val classroomRepository: CenterClassroomRepository,
@@ -63,14 +65,6 @@ class DataSyncService(
 
     companion object {
         private const val MAX_RETRY_ATTEMPTS = 3
-        private val SIDO_SGG_CODES =
-            listOf(
-                // Seoul
-                "11" to "11010",
-                "11" to "11020",
-                "11" to "11030",
-                // Add more codes as needed
-            )
     }
 
     @Scheduled(cron = "0 0 3 * * *")
@@ -81,14 +75,26 @@ class DataSyncService(
     }
 
     fun syncAllData() {
-        SIDO_SGG_CODES.forEach { (sidoCode, sggCode) ->
+        val regions = regionRepository.findAll()
+        logger.info("Found ${regions.size} regions to sync")
+
+        regions.forEach { region ->
             try {
-                logger.info("Syncing data for sido=$sidoCode, sgg=$sggCode")
-                syncRegion(sidoCode, sggCode)
+                logger.info("Syncing data for ${region.sidoName} ${region.sggName} (sido=${region.sidoCode}, sgg=${region.sggCode})")
+                syncRegion(region.sidoCode, region.sggCode)
             } catch (e: Exception) {
-                logger.error("Failed to sync region $sidoCode-$sggCode: ${e.message}", e)
+                logger.error("Failed to sync region ${region.sidoCode}-${region.sggCode}: ${e.message}", e)
             }
         }
+    }
+
+    fun syncSingleRegion(
+        sidoCode: String,
+        sggCode: String,
+    ) {
+        logger.info("Starting single region sync for sido=$sidoCode, sgg=$sggCode")
+        syncRegion(sidoCode, sggCode)
+        logger.info("Completed single region sync for sido=$sidoCode, sgg=$sggCode")
     }
 
     @Transactional
@@ -147,22 +153,22 @@ class DataSyncService(
                             fax = info.faxno
                             homepage = info.hpaddr
                             operatingHours = info.opertime
-                            classCount3 = info.clcnt3
-                            classCount4 = info.clcnt4
-                            classCount5 = info.clcnt5
-                            mixedClassCount = info.mixclcnt
-                            specialClassCount = info.shclcnt
-                            totalCapacity = info.prmstfcnt
-                            capacity3 = info.ag3fpcnt
-                            capacity4 = info.ag4fpcnt
-                            capacity5 = info.ag5fpcnt
-                            mixedCapacity = info.mixfpcnt
-                            specialCapacity = info.spcnfpcnt
-                            enrollment3 = info.ppcnt3
-                            enrollment4 = info.ppcnt4
-                            enrollment5 = info.ppcnt5
-                            mixedEnrollment = info.mixppcnt
-                            specialEnrollment = info.shppcnt
+                            classCount3 = info.clcnt3?.toIntOrNull()
+                            classCount4 = info.clcnt4?.toIntOrNull()
+                            classCount5 = info.clcnt5?.toIntOrNull()
+                            mixedClassCount = info.mixclcnt?.toIntOrNull()
+                            specialClassCount = info.shclcnt?.toIntOrNull()
+                            totalCapacity = info.prmstfcnt?.toIntOrNull()
+                            capacity3 = info.ag3fpcnt?.toIntOrNull()
+                            capacity4 = info.ag4fpcnt?.toIntOrNull()
+                            capacity5 = info.ag5fpcnt?.toIntOrNull()
+                            mixedCapacity = info.mixfpcnt?.toIntOrNull()
+                            specialCapacity = info.spcnfpcnt?.toIntOrNull()
+                            enrollment3 = info.ppcnt3?.toIntOrNull()
+                            enrollment4 = info.ppcnt4?.toIntOrNull()
+                            enrollment5 = info.ppcnt5?.toIntOrNull()
+                            mixedEnrollment = info.mixppcnt?.toIntOrNull()
+                            specialEnrollment = info.shppcnt?.toIntOrNull()
                             location = parseLocation(info.lttdcdnt, info.lngtcdnt)
                             disclosureTiming = info.pbnttmng
                             actingDirector = info.rpstYn
@@ -195,10 +201,10 @@ class DataSyncService(
 
                             entity.apply {
                                 archYear = building.archyy
-                                floorCount = building.floorcnt
-                                buildingArea = building.bldgprusarea?.toDoubleOrNull()
-                                totalLandArea = building.grottar?.toDoubleOrNull()
-                                disclosureTiming = building.pbntTmng
+                                floorCount = building.floorcnt?.replace(Regex("[^0-9]"), "")?.toIntOrNull()
+                                buildingArea = building.bldgprusarea?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
+                                totalLandArea = building.grottar?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
+                                disclosureTiming = building.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -227,13 +233,13 @@ class DataSyncService(
                                 classroomRepository.findByCenterId(centerId) ?: CenterClassroom(center = center)
 
                             entity.apply {
-                                classroomCount = area.crcnt
-                                classroomArea = area.clsrarea?.toDoubleOrNull()
-                                playgroundArea = area.phgrindrarea?.toDoubleOrNull()
-                                healthArea = area.hlsparea?.toDoubleOrNull()
-                                kitchenArea = area.ktchmssparea?.toDoubleOrNull()
-                                otherArea = area.otsparea?.toDoubleOrNull()
-                                disclosureTiming = area.pbntTmng
+                                classroomCount = area.crcnt?.replace(Regex("[^0-9]"), "")?.toIntOrNull()
+                                classroomArea = area.clsrarea?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
+                                playgroundArea = area.phgrindrarea?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
+                                healthArea = area.hlsparea?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
+                                kitchenArea = area.ktchmssparea?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
+                                otherArea = area.otsparea?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
+                                disclosureTiming = area.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -262,24 +268,24 @@ class DataSyncService(
                                 teacherRepository.findByCenterId(centerId) ?: CenterTeacher(center = center)
 
                             entity.apply {
-                                directorCount = teacher.drcnt
-                                viceDirectorCount = teacher.adcnt
-                                masterTeacherCount = teacher.hdst_thcnt
-                                leadTeacherCount = teacher.asps_thcnt
-                                generalTeacherCount = teacher.gnrl_thcnt
-                                specialTeacherCount = teacher.spcn_thcnt
-                                healthTeacherCount = teacher.ntcnt
-                                nutritionTeacherCount = teacher.ntrt_thcnt
-                                contractTeacherCount = teacher.shcnt_thcnt
-                                staffCount = teacher.owcnt
-                                masterQualCount = teacher.hdst_tchr_qacnt
-                                grade1QualCount = teacher.rgth_gd1_qacnt
-                                grade2QualCount = teacher.rgth_gd2_qacnt
-                                assistantQualCount = teacher.asth_qacnt
-                                specialSchoolQualCount = teacher.spsc_tchr_qacnt
-                                healthQualCount = teacher.nth_qacnt
-                                nutritionQualCount = teacher.ntth_qacnt
-                                disclosureTiming = teacher.pbntTmng
+                                directorCount = teacher.drcnt?.toIntOrNull()
+                                viceDirectorCount = teacher.adcnt?.toIntOrNull()
+                                masterTeacherCount = teacher.hdst_thcnt?.toIntOrNull()
+                                leadTeacherCount = teacher.asps_thcnt?.toIntOrNull()
+                                generalTeacherCount = teacher.gnrl_thcnt?.toIntOrNull()
+                                specialTeacherCount = teacher.spcn_thcnt?.toIntOrNull()
+                                healthTeacherCount = teacher.ntcnt?.toIntOrNull()
+                                nutritionTeacherCount = teacher.ntrt_thcnt?.toIntOrNull()
+                                contractTeacherCount = teacher.shcnt_thcnt?.toIntOrNull()
+                                staffCount = teacher.owcnt?.toIntOrNull()
+                                masterQualCount = teacher.hdst_tchr_qacnt?.toIntOrNull()
+                                grade1QualCount = teacher.rgth_gd1_qacnt?.toIntOrNull()
+                                grade2QualCount = teacher.rgth_gd2_qacnt?.toIntOrNull()
+                                assistantQualCount = teacher.asth_qacnt?.toIntOrNull()
+                                specialSchoolQualCount = teacher.spsc_tchr_qacnt?.toIntOrNull()
+                                healthQualCount = teacher.nth_qacnt?.toIntOrNull()
+                                nutritionQualCount = teacher.ntth_qacnt?.toIntOrNull()
+                                disclosureTiming = teacher.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -308,14 +314,14 @@ class DataSyncService(
                                 lessonDayRepository.findByCenterId(centerId) ?: CenterLessonDay(center = center)
 
                             entity.apply {
-                                lessonDays3 = lessonDay.ag3_lsn_dcnt
-                                lessonDays4 = lessonDay.ag4_lsn_dcnt
-                                lessonDays5 = lessonDay.ag5_lsn_dcnt
-                                mixedLessonDays = lessonDay.mix_age_lsn_dcnt
-                                specialLessonDays = lessonDay.spcl_lsn_dcnt
-                                afterSchoolLessonDays = lessonDay.afsc_pros_lsn_dcnt
+                                lessonDays3 = lessonDay.ag3_lsn_dcnt?.toIntOrNull()
+                                lessonDays4 = lessonDay.ag4_lsn_dcnt?.toIntOrNull()
+                                lessonDays5 = lessonDay.ag5_lsn_dcnt?.toIntOrNull()
+                                mixedLessonDays = lessonDay.mix_age_lsn_dcnt?.toIntOrNull()
+                                specialLessonDays = lessonDay.spcl_lsn_dcnt?.toIntOrNull()
+                                afterSchoolLessonDays = lessonDay.afsc_pros_lsn_dcnt?.toIntOrNull()
                                 belowLegalDays = lessonDay.ldnum_blw_yn
-                                disclosureTiming = lessonDay.pbntTmng
+                                disclosureTiming = lessonDay.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -346,16 +352,16 @@ class DataSyncService(
                             entity.apply {
                                 mealOperationType = meal.mlsr_oprn_way_tp_cd
                                 consignmentCompany = meal.cons_ents_nm
-                                totalChildren = meal.al_kpcnt
-                                mealChildren = meal.mlsr_kpcnt
+                                totalChildren = meal.al_kpcnt?.toIntOrNull()
+                                mealChildren = meal.mlsr_kpcnt?.toIntOrNull()
                                 nutritionTeacherAssigned = meal.ntrt_tchr_agmt_yn
-                                singleNutritionTeacherCount = meal.snge_agmt_ntrt_thcnt
-                                jointNutritionTeacherCount = meal.cprt_agmt_ntrt_thcnt
+                                singleNutritionTeacherCount = meal.snge_agmt_ntrt_thcnt?.toIntOrNull()
+                                jointNutritionTeacherCount = meal.cprt_agmt_ntrt_thcnt?.toIntOrNull()
                                 jointInstitutionName = meal.cprt_agmt_itt_nm
-                                cookCount = meal.ckcnt
-                                cookingStaffCount = meal.cmcnt
+                                cookCount = meal.ckcnt?.toIntOrNull()
+                                cookingStaffCount = meal.cmcnt?.toIntOrNull()
                                 massKitchenRegistered = meal.mas_mspl_dclr_yn
-                                disclosureTiming = meal.pbntTmng
+                                disclosureTiming = meal.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -385,12 +391,12 @@ class DataSyncService(
 
                             entity.apply {
                                 busOperating = bus.vhcl_oprn_yn
-                                operatingBusCount = bus.opra_vhcnt
-                                registeredBusCount = bus.dclr_vhcnt
-                                bus9Seat = bus.psg9_dclr_vhcnt
-                                bus12Seat = bus.psg12_dclr_vhcnt
-                                bus15Seat = bus.psg15_dclr_vhcnt
-                                disclosureTiming = bus.pbntTmng
+                                operatingBusCount = bus.opra_vhcnt?.toIntOrNull()
+                                registeredBusCount = bus.dclr_vhcnt?.toIntOrNull()
+                                bus9Seat = bus.psg9_dclr_vhcnt?.toIntOrNull()
+                                bus12Seat = bus.psg12_dclr_vhcnt?.toIntOrNull()
+                                bus15Seat = bus.psg15_dclr_vhcnt?.toIntOrNull()
+                                disclosureTiming = bus.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -419,12 +425,12 @@ class DataSyncService(
                                 yearOfWorkRepository.findByCenterId(centerId) ?: CenterYearOfWork(center = center)
 
                             entity.apply {
-                                under1Year = yearOfWork.yy1_undr_thcnt
-                                between1And2Years = yearOfWork.yy1_abv_yy2_undr_thcnt
-                                between2And4Years = yearOfWork.yy2_abv_yy4_undr_thcnt
-                                between4And6Years = yearOfWork.yy4_abv_yy6_undr_thcnt
-                                over6Years = yearOfWork.yy6_abv_thcnt
-                                disclosureTiming = yearOfWork.pbntTmng
+                                under1Year = yearOfWork.yy1_undr_thcnt?.toIntOrNull()
+                                between1And2Years = yearOfWork.yy1_abv_yy2_undr_thcnt?.toIntOrNull()
+                                between2And4Years = yearOfWork.yy2_abv_yy4_undr_thcnt?.toIntOrNull()
+                                between4And6Years = yearOfWork.yy4_abv_yy6_undr_thcnt?.toIntOrNull()
+                                over6Years = yearOfWork.yy6_abv_thcnt?.toIntOrNull()
+                                disclosureTiming = yearOfWork.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -469,7 +475,7 @@ class DataSyncService(
                                 dustCheckResult = env.mdst_chk_rslt_cd
                                 lightCheckDate = env.ilmn_chk_dt
                                 lightCheckResult = env.ilmn_chk_rslt_cd
-                                disclosureTiming = env.pbntTmng
+                                disclosureTiming = env.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -510,10 +516,10 @@ class DataSyncService(
                                 playgroundCheckDate = safety.plyg_ck_dt
                                 playgroundCheckResult = safety.plyg_ck_rs_cd
                                 cctvInstalled = safety.cctv_ist_yn
-                                cctvTotal = safety.cctv_ist_total
-                                cctvIndoor = safety.cctv_ist_in
-                                cctvOutdoor = safety.cctv_ist_out
-                                disclosureTiming = safety.pbntTmng
+                                cctvTotal = safety.cctv_ist_total?.toIntOrNull()
+                                cctvIndoor = safety.cctv_ist_in?.toIntOrNull()
+                                cctvOutdoor = safety.cctv_ist_out?.toIntOrNull()
+                                disclosureTiming = safety.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -554,7 +560,7 @@ class DataSyncService(
                                 disasterSafety = edu.safe_tp_cd6
                                 occupationalSafety = edu.safe_tp_cd7
                                 firstAid = edu.safe_tp_cd8
-                                disclosureTiming = edu.pbntTmng
+                                disclosureTiming = edu.pbnttmng
                             }
 
                             safetyEducationRepository.save(entity)
@@ -586,7 +592,7 @@ class DataSyncService(
                                 schoolSafetyEnrolled = aid.school_ds_en
                                 educationFacilityTarget = aid.educate_ds_yn
                                 educationFacilityEnrolled = aid.educate_ds_en
-                                disclosureTiming = aid.pbntTmng
+                                disclosureTiming = aid.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 
@@ -624,7 +630,7 @@ class DataSyncService(
                                 company1 = ins.company1
                                 company2 = ins.company2
                                 company3 = ins.company3
-                                disclosureTiming = ins.pbntTmng
+                                disclosureTiming = ins.pbnttmng
                             }
 
                             insuranceRepository.save(entity)
@@ -652,15 +658,15 @@ class DataSyncService(
                                 afterSchoolRepository.findByCenterId(centerId) ?: CenterAfterSchool(center = center)
 
                             entity.apply {
-                                independentClassCount = afterSchool.inor_clcnt
-                                afternoonClassCount = afterSchool.pm_rrgn_clcnt
+                                independentClassCount = afterSchool.inor_clcnt?.toIntOrNull()
+                                afternoonClassCount = afterSchool.pm_rrgn_clcnt?.toIntOrNull()
                                 operatingHours = afterSchool.oper_time
-                                independentParticipants = afterSchool.inor_ptcn_kpcnt
-                                afternoonParticipants = afterSchool.pm_rrgn_ptcn_kpcnt
-                                regularTeacherCount = afterSchool.fxrl_thcnt
-                                contractTeacherCount = afterSchool.shcnt_thcnt
-                                dedicatedStaffCount = afterSchool.incnt
-                                disclosureTiming = afterSchool.pbntTmng
+                                independentParticipants = afterSchool.inor_ptcn_kpcnt?.toIntOrNull()
+                                afternoonParticipants = afterSchool.pm_rrgn_ptcn_kpcnt?.toIntOrNull()
+                                regularTeacherCount = afterSchool.fxrl_thcnt?.toIntOrNull()
+                                contractTeacherCount = afterSchool.shcnt_thcnt?.toIntOrNull()
+                                dedicatedStaffCount = afterSchool.incnt?.toIntOrNull()
+                                disclosureTiming = afterSchool.pbnttmng
                                 updatedAt = LocalDateTime.now()
                             }
 

@@ -1,11 +1,13 @@
 package com.sotti.kindergarten.config
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.sotti.kindergarten.client.KindergartenApiProperties
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.http.ContentType
 import io.ktor.serialization.jackson.jackson
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -18,7 +20,12 @@ class KtorClientConfig {
     fun httpClient(): HttpClient =
         HttpClient(CIO) {
             install(ContentNegotiation) {
-                jackson()
+                jackson(contentType = ContentType.Application.Json) {
+                    configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                }
+                jackson(contentType = ContentType.Text.Html) {
+                    configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                }
             }
             install(Logging) {
                 level = LogLevel.INFO

@@ -1,6 +1,7 @@
 package com.sotti.kindergarten.client.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class BasicInfoApiResponse(
@@ -11,6 +12,7 @@ data class BasicInfoApiResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class BasicInfo(
+    @JsonProperty("kindercode")
     val kinderCode: String?,
     val officeedu: String?,
     val subofficeedu: String?,
@@ -25,23 +27,24 @@ data class BasicInfo(
     val faxno: String?,
     val hpaddr: String?,
     val opertime: String?,
-    val clcnt3: Int?,
-    val clcnt4: Int?,
-    val clcnt5: Int?,
-    val mixclcnt: Int?,
-    val shclcnt: Int?,
-    val prmstfcnt: Int?,
-    val ag3fpcnt: Int?,
-    val ag4fpcnt: Int?,
-    val ag5fpcnt: Int?,
-    val mixfpcnt: Int?,
-    val spcnfpcnt: Int?,
-    val ppcnt3: Int?,
-    val ppcnt4: Int?,
-    val ppcnt5: Int?,
-    val mixppcnt: Int?,
-    val shppcnt: Int?,
+    val clcnt3: String?,
+    val clcnt4: String?,
+    val clcnt5: String?,
+    val mixclcnt: String?,
+    val shclcnt: String?,
+    val prmstfcnt: String?,
+    val ag3fpcnt: String?,
+    val ag4fpcnt: String?,
+    val ag5fpcnt: String?,
+    val mixfpcnt: String?,
+    val spcnfpcnt: String?,
+    val ppcnt3: String?,
+    val ppcnt4: String?,
+    val ppcnt5: String?,
+    val mixppcnt: String?,
+    val shppcnt: String?,
     val pbnttmng: String?,
+    @JsonProperty("rpst_yn")
     val rpstYn: String?,
     val lttdcdnt: String?,
     val lngtcdnt: String?,

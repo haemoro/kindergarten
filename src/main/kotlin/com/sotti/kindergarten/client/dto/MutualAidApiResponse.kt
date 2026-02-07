@@ -12,15 +12,11 @@ data class MutualAidApiResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class MutualAid(
+    @JsonProperty("kindercode")
     val kinderCode: String?,
-    val officeedu: String?,
-    val subofficeedu: String?,
-    val kindername: String?,
-    @JsonProperty("estb_pt")
-    val estbPt: String?,
     val school_ds_yn: String?,
     val school_ds_en: String?,
     val educate_ds_yn: String?,
     val educate_ds_en: String?,
-    val pbntTmng: String?,
+    val pbnttmng: String?,
 )

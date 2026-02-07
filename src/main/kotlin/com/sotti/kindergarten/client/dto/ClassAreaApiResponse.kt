@@ -1,6 +1,7 @@
 package com.sotti.kindergarten.client.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ClassAreaApiResponse(
@@ -11,16 +12,13 @@ data class ClassAreaApiResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ClassArea(
+    @JsonProperty("kindercode")
     val kinderCode: String?,
-    val officeedu: String?,
-    val subofficeedu: String?,
-    val kindername: String?,
-    val establish: String?,
-    val crcnt: Int?,
+    val crcnt: String?,
     val clsrarea: String?,
     val phgrindrarea: String?,
     val hlsparea: String?,
     val ktchmssparea: String?,
     val otsparea: String?,
-    val pbntTmng: String?,
+    val pbnttmng: String?,
 )

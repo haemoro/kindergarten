@@ -1,6 +1,7 @@
 package com.sotti.kindergarten.client.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class TeacherApiResponse(
@@ -11,27 +12,24 @@ data class TeacherApiResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Teacher(
+    @JsonProperty("kindercode")
     val kinderCode: String?,
-    val officeedu: String?,
-    val subofficeedu: String?,
-    val kindername: String?,
-    val establish: String?,
-    val drcnt: Int?,
-    val adcnt: Int?,
-    val hdst_thcnt: Int?,
-    val asps_thcnt: Int?,
-    val gnrl_thcnt: Int?,
-    val spcn_thcnt: Int?,
-    val ntcnt: Int?,
-    val ntrt_thcnt: Int?,
-    val shcnt_thcnt: Int?,
-    val owcnt: Int?,
-    val hdst_tchr_qacnt: Int?,
-    val rgth_gd1_qacnt: Int?,
-    val rgth_gd2_qacnt: Int?,
-    val asth_qacnt: Int?,
-    val spsc_tchr_qacnt: Int?,
-    val nth_qacnt: Int?,
-    val ntth_qacnt: Int?,
-    val pbntTmng: String?,
+    val drcnt: String?,
+    val adcnt: String?,
+    val hdst_thcnt: String?,
+    val asps_thcnt: String?,
+    val gnrl_thcnt: String?,
+    val spcn_thcnt: String?,
+    val ntcnt: String?,
+    val ntrt_thcnt: String?,
+    val shcnt_thcnt: String?,
+    val owcnt: String?,
+    val hdst_tchr_qacnt: String?,
+    val rgth_gd1_qacnt: String?,
+    val rgth_gd2_qacnt: String?,
+    val asth_qacnt: String?,
+    val spsc_tchr_qacnt: String?,
+    val nth_qacnt: String?,
+    val ntth_qacnt: String?,
+    val pbnttmng: String?,
 )
