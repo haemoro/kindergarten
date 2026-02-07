@@ -2,6 +2,8 @@ package com.sotti.kindergarten.repository
 
 import com.sotti.kindergarten.entity.Center
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.util.UUID
 
@@ -12,4 +14,26 @@ interface CenterRepository :
     fun findByKinderCode(kinderCode: String): Center?
 
     fun findAllByKinderCodeIn(kinderCodes: List<String>): List<Center>
+
+    @Modifying
+    @Query("UPDATE Center c SET c.isActive = :isActive WHERE c.id IN :ids")
+    fun batchUpdateIsActive(
+        ids: List<UUID>,
+        isActive: Boolean,
+    ): Int
+
+    @Modifying
+    @Query("UPDATE Center c SET c.isVerified = :isVerified WHERE c.id IN :ids")
+    fun batchUpdateIsVerified(
+        ids: List<UUID>,
+        isVerified: Boolean,
+    ): Int
+
+    fun countByIsVerifiedTrue(): Long
+
+    fun countByIsVerifiedFalse(): Long
+
+    fun countByIsActiveTrue(): Long
+
+    fun countByEstablishType(establishType: String): Long
 }

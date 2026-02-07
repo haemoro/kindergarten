@@ -69,6 +69,11 @@ class Center(
     @Column(length = 50)
     var actingDirector: String? = null,
     var sourceUpdatedAt: LocalDateTime? = null,
+    // Admin fields
+    var isVerified: Boolean = false,
+    var isActive: Boolean = true,
+    @Column(columnDefinition = "TEXT")
+    var adminMemo: String? = null,
     // Relationships
     @OneToOne(mappedBy = "center", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     var building: CenterBuilding? = null,

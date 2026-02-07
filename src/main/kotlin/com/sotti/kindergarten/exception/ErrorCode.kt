@@ -1,0 +1,18 @@
+package com.sotti.kindergarten.exception
+
+import org.springframework.http.HttpStatus
+
+enum class ErrorCode(
+    val httpStatus: HttpStatus,
+    val message: String,
+) {
+    KINDERGARTEN_NOT_FOUND(HttpStatus.NOT_FOUND, "Kindergarten not found"),
+    INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "Invalid parameter"),
+    COMPARE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Comparison is limited to a maximum of 4 kindergartens"),
+    COMPARE_MINIMUM_REQUIRED(HttpStatus.BAD_REQUEST, "At least 2 kindergartens are required for comparison"),
+    FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "Favorite not found"),
+    DUPLICATE_FAVORITE(HttpStatus.CONFLICT, "Favorite already exists"),
+    CRAWL_ALREADY_RUNNING(HttpStatus.CONFLICT, "Crawl is already running"),
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Validation failed"),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"),
+}

@@ -9,12 +9,25 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+    @ExceptionHandler(BusinessException::class)
+    fun handleBusinessException(ex: BusinessException): ResponseEntity<ErrorResponse> =
+        ResponseEntity
+            .status(ex.errorCode.httpStatus)
+            .body(
+                ErrorResponse(
+                    status = ex.errorCode.httpStatus.value(),
+                    code = ex.errorCode.name,
+                    message = ex.message,
+                ),
+            )
+
     @ExceptionHandler(CenterNotFoundException::class)
     fun handleCenterNotFound(ex: CenterNotFoundException): ResponseEntity<ErrorResponse> =
         ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .body(
                 ErrorResponse(
+                    status = HttpStatus.NOT_FOUND.value(),
                     code = "CENTER_NOT_FOUND",
                     message = ex.message ?: "Center not found",
                 ),
@@ -26,6 +39,7 @@ class GlobalExceptionHandler {
             .status(HttpStatus.BAD_REQUEST)
             .body(
                 ErrorResponse(
+                    status = HttpStatus.BAD_REQUEST.value(),
                     code = "INVALID_COMPARE_REQUEST",
                     message = ex.message ?: "Invalid comparison request",
                 ),
@@ -37,6 +51,7 @@ class GlobalExceptionHandler {
             .status(HttpStatus.NOT_FOUND)
             .body(
                 ErrorResponse(
+                    status = HttpStatus.NOT_FOUND.value(),
                     code = "FAVORITE_NOT_FOUND",
                     message = ex.message ?: "Favorite not found",
                 ),
@@ -48,6 +63,7 @@ class GlobalExceptionHandler {
             .status(HttpStatus.CONFLICT)
             .body(
                 ErrorResponse(
+                    status = HttpStatus.CONFLICT.value(),
                     code = "DUPLICATE_FAVORITE",
                     message = ex.message ?: "Favorite already exists",
                 ),
@@ -63,6 +79,7 @@ class GlobalExceptionHandler {
             .status(HttpStatus.BAD_REQUEST)
             .body(
                 ErrorResponse(
+                    status = HttpStatus.BAD_REQUEST.value(),
                     code = "VALIDATION_ERROR",
                     message = errors.ifEmpty { "Validation failed" },
                 ),
@@ -75,6 +92,7 @@ class GlobalExceptionHandler {
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(
                 ErrorResponse(
+                    status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
                     code = "INTERNAL_SERVER_ERROR",
                     message = ex.message ?: "An unexpected error occurred",
                 ),

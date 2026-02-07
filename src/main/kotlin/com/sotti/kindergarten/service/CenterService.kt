@@ -19,8 +19,20 @@ import com.sotti.kindergarten.dto.SafetyCheckInfo
 import com.sotti.kindergarten.dto.SafetyEducationInfo
 import com.sotti.kindergarten.dto.TeacherInfo
 import com.sotti.kindergarten.dto.YearOfWorkInfo
+import com.sotti.kindergarten.dto.app.AfterSchoolSection
+import com.sotti.kindergarten.dto.app.AppCompareResponse
+import com.sotti.kindergarten.dto.app.AppKindergartenDetailResponse
+import com.sotti.kindergarten.dto.app.AppKindergartenSearchResponse
+import com.sotti.kindergarten.dto.app.EducationSection
+import com.sotti.kindergarten.dto.app.FacilitySection
+import com.sotti.kindergarten.dto.app.MapMarkerResponse
+import com.sotti.kindergarten.dto.app.MealSection
+import com.sotti.kindergarten.dto.app.SafetySection
+import com.sotti.kindergarten.dto.app.TeacherSection
 import com.sotti.kindergarten.entity.Center
+import com.sotti.kindergarten.exception.BusinessException
 import com.sotti.kindergarten.exception.CenterNotFoundException
+import com.sotti.kindergarten.exception.ErrorCode
 import com.sotti.kindergarten.exception.InvalidCompareRequestException
 import com.sotti.kindergarten.repository.CenterRepository
 import org.springframework.data.domain.PageRequest
@@ -114,6 +126,307 @@ class CenterService(
 
         return CenterCompareResponse(centers = comparisons)
     }
+
+    fun searchActiveKindergartens(
+        lat: Double?,
+        lng: Double?,
+        radiusKm: Double?,
+        establishType: String?,
+        query: String?,
+        sort: String?,
+        page: Int,
+        size: Int,
+    ): PageResponse<AppKindergartenSearchResponse> {
+        val pageable = PageRequest.of(page, size, getSort(sort))
+
+        val centersPage =
+            if (lat != null && lng != null && radiusKm != null) {
+                val radiusMeters = radiusKm * 1000
+                centerRepository.findNearbyActive(lat, lng, radiusMeters, establishType, query, pageable)
+            } else {
+                centerRepository.findAllActiveWithFilters(establishType, query, pageable)
+            }
+
+        val content =
+            centersPage.content.map { center ->
+                val location = center.location
+                val distance =
+                    if (lat != null && lng != null && location != null) {
+                        calculateDistance(lat, lng, location.y, location.x)
+                    } else {
+                        null
+                    }
+
+                toAppSearchResponse(center, distance)
+            }
+
+        return PageResponse(
+            content = content,
+            page = centersPage.number,
+            size = centersPage.size,
+            totalElements = centersPage.totalElements,
+            totalPages = centersPage.totalPages,
+        )
+    }
+
+    fun getActiveKindergartenDetail(id: UUID): AppKindergartenDetailResponse {
+        val center =
+            centerRepository.findById(id).orElseThrow {
+                BusinessException(ErrorCode.KINDERGARTEN_NOT_FOUND)
+            }
+        if (!center.isActive) {
+            throw BusinessException(ErrorCode.KINDERGARTEN_NOT_FOUND)
+        }
+        return toAppDetailResponse(center)
+    }
+
+    fun compareActiveKindergartens(
+        ids: List<UUID>,
+        lat: Double?,
+        lng: Double?,
+    ): AppCompareResponse {
+        if (ids.size < 2) {
+            throw BusinessException(ErrorCode.COMPARE_MINIMUM_REQUIRED)
+        }
+        if (ids.size > 4) {
+            throw BusinessException(ErrorCode.COMPARE_LIMIT_EXCEEDED)
+        }
+
+        val centers = centerRepository.findAllById(ids)
+        if (centers.size != ids.size) {
+            throw BusinessException(ErrorCode.KINDERGARTEN_NOT_FOUND)
+        }
+
+        val activeCenters = centers.filter { it.isActive }
+        if (activeCenters.size != ids.size) {
+            throw BusinessException(ErrorCode.KINDERGARTEN_NOT_FOUND)
+        }
+
+        val comparisons =
+            activeCenters.map { center ->
+                val location = center.location
+                val distance =
+                    if (lat != null && lng != null && location != null) {
+                        calculateDistance(lat, lng, location.y, location.x)
+                    } else {
+                        null
+                    }
+
+                toComparisonItem(center, distance)
+            }
+
+        return AppCompareResponse(centers = comparisons)
+    }
+
+    fun getMapMarkers(
+        lat: Double,
+        lng: Double,
+        radiusKm: Double,
+        establishType: String?,
+    ): List<MapMarkerResponse> {
+        val radiusMeters = radiusKm * 1000
+        val projections = centerRepository.findMapMarkers(lat, lng, radiusMeters, establishType)
+        return projections.map { projection ->
+            MapMarkerResponse(
+                id = projection.id,
+                name = projection.name,
+                establishType = projection.establishType,
+                lat = projection.lat,
+                lng = projection.lng,
+            )
+        }
+    }
+
+    private fun toAppSearchResponse(
+        center: Center,
+        distanceKm: Double?,
+    ): AppKindergartenSearchResponse {
+        val currentEnrollment = calculateCurrentEnrollment(center)
+        val totalClassCount = calculateTotalClassCount(center)
+
+        return AppKindergartenSearchResponse(
+            id = center.id!!,
+            name = center.name,
+            establishType = center.establishType,
+            address = center.address,
+            phone = center.phone,
+            lat = center.location?.y,
+            lng = center.location?.x,
+            distanceKm = distanceKm,
+            capacity = center.totalCapacity,
+            currentEnrollment = currentEnrollment,
+            totalClassCount = totalClassCount,
+            mealProvided = center.meal?.mealOperationType != null,
+            busAvailable = center.bus?.busOperating?.equals("Y", ignoreCase = true),
+            extendedCare = center.afterSchool != null,
+        )
+    }
+
+    private fun toAppDetailResponse(center: Center): AppKindergartenDetailResponse =
+        AppKindergartenDetailResponse(
+            id = center.id!!,
+            name = center.name,
+            establishType = center.establishType,
+            address = center.address,
+            phone = center.phone,
+            homepage = center.homepage,
+            operatingHours = center.operatingHours,
+            lat = center.location?.y,
+            lng = center.location?.x,
+            representativeName = center.representativeName,
+            directorName = center.directorName,
+            establishDate = center.establishDate,
+            openDate = center.openDate,
+            education = buildEducationSection(center),
+            meal = buildMealSection(center),
+            safety = buildSafetySection(center),
+            facility = buildFacilitySection(center),
+            teacher = buildTeacherSection(center),
+            afterSchool = buildAfterSchoolSection(center),
+            sourceUpdatedAt = center.sourceUpdatedAt,
+        )
+
+    private fun buildEducationSection(center: Center): EducationSection? {
+        val hasClassData =
+            listOfNotNull(
+                center.classCount3,
+                center.classCount4,
+                center.classCount5,
+                center.mixedClassCount,
+                center.specialClassCount,
+            ).isNotEmpty()
+        val hasLessonDay = center.lessonDay != null
+
+        if (!hasClassData && !hasLessonDay) return null
+
+        return EducationSection(
+            classCountByAge =
+                mapOf(
+                    "age3" to center.classCount3,
+                    "age4" to center.classCount4,
+                    "age5" to center.classCount5,
+                    "mixed" to center.mixedClassCount,
+                    "special" to center.specialClassCount,
+                ),
+            capacityByAge =
+                mapOf(
+                    "age3" to center.capacity3,
+                    "age4" to center.capacity4,
+                    "age5" to center.capacity5,
+                    "mixed" to center.mixedCapacity,
+                    "special" to center.specialCapacity,
+                ),
+            enrollmentByAge =
+                mapOf(
+                    "age3" to center.enrollment3,
+                    "age4" to center.enrollment4,
+                    "age5" to center.enrollment5,
+                    "mixed" to center.mixedEnrollment,
+                    "special" to center.specialEnrollment,
+                ),
+            lessonDaysAge3 = center.lessonDay?.lessonDays3,
+            lessonDaysAge4 = center.lessonDay?.lessonDays4,
+            lessonDaysAge5 = center.lessonDay?.lessonDays5,
+            lessonDaysMixed = center.lessonDay?.mixedLessonDays,
+            belowLegalDays = center.lessonDay?.belowLegalDays,
+        )
+    }
+
+    private fun buildMealSection(center: Center): MealSection? =
+        center.meal?.let {
+            MealSection(
+                mealOperationType = it.mealOperationType,
+                consignmentCompany = it.consignmentCompany,
+                mealChildren = it.mealChildren,
+                cookCount = it.cookCount,
+            )
+        }
+
+    private fun buildSafetySection(center: Center): SafetySection? {
+        val hasEnvironment = center.environment != null
+        val hasSafetyCheck = center.safetyCheck != null
+        val hasMutualAid = center.mutualAid != null
+
+        if (!hasEnvironment && !hasSafetyCheck && !hasMutualAid) return null
+
+        return SafetySection(
+            airQualityCheck = center.environment?.airQualityCheckResult,
+            disinfectionCheck = center.environment?.regularDisinfectionResult,
+            waterQualityCheck = center.environment?.groundwaterTestResult,
+            dustMeasurement = center.environment?.dustCheckResult,
+            lightMeasurement = center.environment?.lightCheckResult,
+            fireInsuranceCheck = center.safetyCheck?.fireSafetyYn,
+            gasCheck = center.safetyCheck?.gasCheckYn,
+            electricCheck = center.safetyCheck?.electricCheckYn,
+            playgroundCheck = center.safetyCheck?.playgroundCheckYn,
+            cctvInstalled = center.safetyCheck?.cctvInstalled,
+            cctvTotal = center.safetyCheck?.cctvTotal,
+            schoolSafetyEnrolled = center.mutualAid?.schoolSafetyEnrolled,
+            educationFacilityEnrolled = center.mutualAid?.educationFacilityEnrolled,
+        )
+    }
+
+    private fun buildFacilitySection(center: Center): FacilitySection? {
+        val hasBuilding = center.building != null
+        val hasClassroom = center.classroom != null
+        val hasBus = center.bus != null
+
+        if (!hasBuilding && !hasClassroom && !hasBus) return null
+
+        return FacilitySection(
+            archYear = center.building?.archYear?.toIntOrNull(),
+            floorCount = center.building?.floorCount,
+            buildingArea = center.building?.buildingArea,
+            totalLandArea = center.building?.totalLandArea,
+            classroomCount = center.classroom?.classroomCount,
+            classroomArea = center.classroom?.classroomArea,
+            playgroundArea = center.classroom?.playgroundArea,
+            busOperating = center.bus?.busOperating,
+            operatingBusCount = center.bus?.operatingBusCount,
+            registeredBusCount = center.bus?.registeredBusCount,
+        )
+    }
+
+    private fun buildTeacherSection(center: Center): TeacherSection? {
+        val hasTeacher = center.teacher != null
+        val hasYearOfWork = center.yearOfWork != null
+
+        if (!hasTeacher && !hasYearOfWork) return null
+
+        return TeacherSection(
+            directorCount = center.teacher?.directorCount,
+            viceDirectorCount = center.teacher?.viceDirectorCount,
+            masterTeacherCount = center.teacher?.masterTeacherCount,
+            leadTeacherCount = center.teacher?.leadTeacherCount,
+            generalTeacherCount = center.teacher?.generalTeacherCount,
+            specialTeacherCount = center.teacher?.specialTeacherCount,
+            healthTeacherCount = center.teacher?.healthTeacherCount,
+            nutritionTeacherCount = center.teacher?.nutritionTeacherCount,
+            staffCount = center.teacher?.staffCount,
+            masterQualCount = center.teacher?.masterQualCount,
+            grade1QualCount = center.teacher?.grade1QualCount,
+            grade2QualCount = center.teacher?.grade2QualCount,
+            assistantQualCount = center.teacher?.assistantQualCount,
+            under1Year = center.yearOfWork?.under1Year,
+            between1And2Years = center.yearOfWork?.between1And2Years,
+            between2And4Years = center.yearOfWork?.between2And4Years,
+            between4And6Years = center.yearOfWork?.between4And6Years,
+            over6Years = center.yearOfWork?.over6Years,
+        )
+    }
+
+    private fun buildAfterSchoolSection(center: Center): AfterSchoolSection? =
+        center.afterSchool?.let {
+            AfterSchoolSection(
+                independentClassCount = it.independentClassCount,
+                afternoonClassCount = it.afternoonClassCount,
+                independentParticipants = it.independentParticipants,
+                afternoonParticipants = it.afternoonParticipants,
+                regularTeacherCount = it.regularTeacherCount,
+                contractTeacherCount = it.contractTeacherCount,
+                dedicatedStaffCount = it.dedicatedStaffCount,
+            )
+        }
 
     private fun getSort(sort: String?): Sort =
         when (sort) {
