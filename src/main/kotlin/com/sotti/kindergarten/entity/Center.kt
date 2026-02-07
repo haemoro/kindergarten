@@ -70,7 +70,9 @@ class Center(
     var actingDirector: String? = null,
     var sourceUpdatedAt: LocalDateTime? = null,
     // Admin fields
+    @Column(columnDefinition = "boolean not null default false")
     var isVerified: Boolean = false,
+    @Column(columnDefinition = "boolean not null default true")
     var isActive: Boolean = true,
     @Column(columnDefinition = "TEXT")
     var adminMemo: String? = null,

@@ -14,5 +14,13 @@ enum class ErrorCode(
     DUPLICATE_FAVORITE(HttpStatus.CONFLICT, "Favorite already exists"),
     CRAWL_ALREADY_RUNNING(HttpStatus.CONFLICT, "Crawl is already running"),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Validation failed"),
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Invalid email or password"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Authentication is required"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "Access denied"),
+    ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "Admin not found"),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "Email already exists"),
+    ADMIN_INACTIVE(HttpStatus.FORBIDDEN, "Admin account is inactive"),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "Current password is incorrect"),
+    CANNOT_DELETE_SELF(HttpStatus.BAD_REQUEST, "Cannot delete your own account"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"),
 }

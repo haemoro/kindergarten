@@ -3,6 +3,7 @@ package com.sotti.kindergarten.exception
 import com.sotti.kindergarten.dto.ErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -66,6 +67,18 @@ class GlobalExceptionHandler {
                     status = HttpStatus.CONFLICT.value(),
                     code = "DUPLICATE_FAVORITE",
                     message = ex.message ?: "Favorite already exists",
+                ),
+            )
+
+    @ExceptionHandler(AccessDeniedException::class)
+    fun handleAccessDenied(ex: AccessDeniedException): ResponseEntity<ErrorResponse> =
+        ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(
+                ErrorResponse(
+                    status = HttpStatus.FORBIDDEN.value(),
+                    code = "FORBIDDEN",
+                    message = "Access denied",
                 ),
             )
 

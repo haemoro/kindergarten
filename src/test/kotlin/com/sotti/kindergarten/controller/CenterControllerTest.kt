@@ -12,12 +12,8 @@ import com.sotti.kindergarten.exception.GlobalExceptionHandler
 import com.sotti.kindergarten.exception.InvalidCompareRequestException
 import com.sotti.kindergarten.service.CenterService
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.extensions.spring.SpringExtension
 import io.mockk.every
 import io.mockk.mockk
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.context.annotation.Bean
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -27,16 +23,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import java.util.UUID
 
-@WebMvcTest(CenterController::class)
 class CenterControllerTest : BehaviorSpec() {
-    override fun extensions() = listOf(SpringExtension)
-
-    @TestConfiguration
-    class TestConfig {
-        @Bean
-        fun centerService(): CenterService = mockk()
-    }
-
     private lateinit var mockMvc: MockMvc
     private lateinit var centerService: CenterService
     private lateinit var objectMapper: ObjectMapper

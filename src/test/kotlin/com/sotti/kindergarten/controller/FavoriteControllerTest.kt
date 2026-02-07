@@ -10,14 +10,10 @@ import com.sotti.kindergarten.exception.FavoriteNotFoundException
 import com.sotti.kindergarten.exception.GlobalExceptionHandler
 import com.sotti.kindergarten.service.FavoriteService
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.extensions.spring.SpringExtension
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.context.annotation.Bean
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
@@ -30,16 +26,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
 import java.time.LocalDateTime
 import java.util.UUID
 
-@WebMvcTest(FavoriteController::class)
 class FavoriteControllerTest : BehaviorSpec() {
-    override fun extensions() = listOf(SpringExtension)
-
-    @TestConfiguration
-    class TestConfig {
-        @Bean
-        fun favoriteService(): FavoriteService = mockk()
-    }
-
     private lateinit var mockMvc: MockMvc
     private lateinit var favoriteService: FavoriteService
     private lateinit var objectMapper: ObjectMapper
